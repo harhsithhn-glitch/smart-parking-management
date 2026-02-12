@@ -1,17 +1,26 @@
 #ifndef PARKINGSLOT_H
 #define PARKINGSLOT_H
 
-#include <memory>
 #include "Vehicle.h"
 
 class ParkingSlot {
-public:
+private:
     int floor;
-    int number;
-    bool occupied;
-    std::shared_ptr<Vehicle> vehicle;
+    int slotNumber;
+    bool available;
+    Vehicle vehicle;
 
-    ParkingSlot(int floorNumber, int slotNumber);
+public:
+    ParkingSlot(int f, int s);
+
+    bool isAvailable() const;
+    int getFloor() const;
+    int getSlotNumber() const;
+
+    void parkVehicle(const Vehicle& v);
+    void removeVehicle();
+
+    const Vehicle& getVehicle() const;
 };
 
 #endif
