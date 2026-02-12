@@ -2,17 +2,23 @@
 #define VEHICLE_H
 
 #include <string>
-#include <ctime>
 
-enum class VehicleType { BIKE = 1, CAR, TRUCK };
+enum class VehicleType {
+    CAR = 1,
+    BIKE = 2,
+    TRUCK = 3
+};
 
 class Vehicle {
-public:
-    std::string plate;
+private:
+    std::string plateNumber;
     VehicleType type;
-    std::time_t entryTime;
 
-    Vehicle(const std::string& plateNumber, VehicleType vehicleType);
+public:
+    Vehicle(std::string plate = "", VehicleType t = VehicleType::CAR);
+
+    std::string getPlateNumber() const;
+    VehicleType getType() const;
 };
 
 #endif
