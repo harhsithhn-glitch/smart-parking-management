@@ -1,58 +1,73 @@
 #include <iostream>
 #include <vector>
+#include <unordered_map>
+#include <memory>
 #include <fstream>
 #include <ctime>
+#include <iomanip>
 using namespace std;
 
-enum VehicleType { BIKE = 1, CAR, TRUCK };
+enum class VehicleType { BIKE = 1, CAR, TRUCK };
+
+string vehicleTypeToString(VehicleType type) {
+    switch(type) {
+        case VehicleType::BIKE: return "Bike";
+        case VehicleType::CAR: return "Car";
+        case VehicleType::TRUCK: return "Truck";
+    }
+    return "Unknown";
+}
 
 class Vehicle {
 public:
-    string plateNumber;
+    string plate;
     VehicleType type;
     time_t entryTime;
 
-    Vehicle(string plate, VehicleType t) {
-        plateNumber = plate;
-        type = t;
-        entryTime = time(0);
-    }
+    Vehicle(string p, VehicleType t)
+        : plate(p), type(t), entryTime(time(nullptr)) {}
 };
 
 class ParkingSlot {
 public:
     int floor;
-    int slotNumber;
-    bool isOccupied;
-    Vehicle* vehicle;
+    int number;
+    bool occupied;
+    shared_ptr<Vehicle> vehicle;
 
-    ParkingSlot(int f, int num) {
-        floor = f;
-        slotNumber = num;
-        isOccupied = false;
-        vehicle = nullptr;
-    }
+    ParkingSlot(int f, int n)
+        : floor(f), number(n), occupied(false), vehicle(nullptr) {}
 };
 
 class ParkingSystem {
 private:
     vector<ParkingSlot> slots;
-    const string adminPassword = "admin123";
+    unordered_map<string, ParkingSlot*> vehicleIndex;
     double totalRevenue = 0;
+    const string adminPassword = "elite123";
 
     double getRate(VehicleType type) {
-        if(type == BIKE) return 10;
-        if(type == CAR) return 20;
-        return 40;
+        switch(type) {
+            case VehicleType::BIKE: return 15;
+            case VehicleType::CAR: return 30;
+            case VehicleType::TRUCK: return 60;
+        }
+        return 0;
+    }
+
+    void logEvent(const string& message) {
+        ofstream log("system_log.txt", ios::app);
+        time_t now = time(nullptr);
+        log << ctime(&now) << " - " << message << "\n";
+        log.close();
     }
 
 public:
-    ParkingSystem(int floors, int slotsPerFloor) {
-        for(int f = 1; f <= floors; f++) {
-            for(int s = 1; s <= slotsPerFloor; s++) {
-                slots.push_back(ParkingSlot(f, s));
-            }
-        }
+    ParkingSystem(int floors, int perFloor) {
+        for(int f=1; f<=floors; f++)
+            for(int s=1; s<=perFloor; s++)
+                slots.emplace_back(f, s);
+
         loadData();
     }
 
@@ -60,9 +75,9 @@ public:
         cout << "\n===== Parking Status =====\n";
         for(auto &slot : slots) {
             cout << "Floor " << slot.floor
-                 << " | Slot " << slot.slotNumber << " : ";
-            if(slot.isOccupied)
-                cout << "Occupied (" << slot.vehicle->plateNumber << ")";
+                 << " | Slot " << slot.number << " : ";
+            if(slot.occupied)
+                cout << "Occupied (" << slot.vehicle->plate << ")";
             else
                 cout << "Empty";
             cout << endl;
@@ -76,17 +91,27 @@ public:
         cout << "Enter plate number: ";
         cin >> plate;
 
+        if(vehicleIndex.count(plate)) {
+            cout << "Vehicle already parked!\n";
+            return;
+        }
+
         cout << "Vehicle Type (1=Bike, 2=Car, 3=Truck): ";
         cin >> typeInput;
 
-        VehicleType type = (VehicleType)typeInput;
+        VehicleType type = static_cast<VehicleType>(typeInput);
 
         for(auto &slot : slots) {
-            if(!slot.isOccupied) {
-                slot.vehicle = new Vehicle(plate, type);
-                slot.isOccupied = true;
-                cout << "Parked at Floor " << slot.floor
-                     << ", Slot " << slot.slotNumber << endl;
+            if(!slot.occupied) {
+                slot.vehicle = make_shared<Vehicle>(plate, type);
+                slot.occupied = true;
+                vehicleIndex[plate] = &slot;
+
+                cout << "Parked at Floor "
+                     << slot.floor << ", Slot "
+                     << slot.number << endl;
+
+                logEvent("Vehicle Parked: " + plate);
                 saveData();
                 return;
             }
@@ -100,33 +125,35 @@ public:
         cout << "Enter plate number: ";
         cin >> plate;
 
-        for(auto &slot : slots) {
-            if(slot.isOccupied && slot.vehicle->plateNumber == plate) {
-
-                time_t exitTime = time(0);
-                double hours = difftime(exitTime,
-                        slot.vehicle->entryTime) / 3600.0;
-                if(hours < 1) hours = 1;
-
-                double rate = getRate(slot.vehicle->type);
-                double fee = hours * rate;
-                totalRevenue += fee;
-
-                cout << "Removed from Floor "
-                     << slot.floor << ", Slot "
-                     << slot.slotNumber << endl;
-                cout << "Fee: ₹" << fee << endl;
-
-                delete slot.vehicle;
-                slot.vehicle = nullptr;
-                slot.isOccupied = false;
-
-                saveData();
-                return;
-            }
+        if(!vehicleIndex.count(plate)) {
+            cout << "Vehicle not found!\n";
+            return;
         }
 
-        cout << "Vehicle not found!\n";
+        ParkingSlot* slot = vehicleIndex[plate];
+        time_t exitTime = time(nullptr);
+
+        double hours = difftime(exitTime,
+                        slot->vehicle->entryTime) / 3600.0;
+        if(hours < 1) hours = 1;
+
+        double fee = hours * getRate(slot->vehicle->type);
+        totalRevenue += fee;
+
+        cout << fixed << setprecision(2);
+        cout << "Removed from Floor "
+             << slot->floor << ", Slot "
+             << slot->number << endl;
+        cout << "Fee: ₹" << fee << endl;
+
+        exportRevenueCSV(plate, fee);
+
+        slot->vehicle = nullptr;
+        slot->occupied = false;
+        vehicleIndex.erase(plate);
+
+        logEvent("Vehicle Removed: " + plate);
+        saveData();
     }
 
     void adminPanel() {
@@ -140,20 +167,32 @@ public:
         }
 
         cout << "\n===== ADMIN PANEL =====\n";
-        cout << "Total Revenue: ₹" << totalRevenue << endl;
+        cout << "Total Revenue: ₹"
+             << fixed << setprecision(2)
+             << totalRevenue << endl;
+    }
+
+    void exportRevenueCSV(string plate, double fee) {
+        ofstream csv("revenue_report.csv", ios::app);
+        time_t now = time(nullptr);
+        csv << plate << ","
+            << fee << ","
+            << ctime(&now);
+        csv.close();
     }
 
     void saveData() {
         ofstream file("parking_data.txt");
         for(auto &slot : slots) {
-            if(slot.isOccupied) {
+            if(slot.occupied) {
                 file << slot.floor << " "
-                     << slot.slotNumber << " "
-                     << slot.vehicle->plateNumber << " "
-                     << slot.vehicle->type << " "
+                     << slot.number << " "
+                     << slot.vehicle->plate << " "
+                     << static_cast<int>(slot.vehicle->type) << " "
                      << slot.vehicle->entryTime << endl;
             }
         }
+        file << "REVENUE " << totalRevenue;
         file.close();
     }
 
@@ -161,32 +200,42 @@ public:
         ifstream file("parking_data.txt");
         if(!file) return;
 
-        int f, s, type;
         string plate;
+        int f, s, type;
         time_t entry;
+        string tag;
 
-        while(file >> f >> s >> plate >> type >> entry) {
+        while(file >> f) {
+            if(f == 0) break;
+            file >> s >> plate >> type >> entry;
+
             for(auto &slot : slots) {
-                if(slot.floor == f && slot.slotNumber == s) {
+                if(slot.floor == f && slot.number == s) {
                     slot.vehicle =
-                        new Vehicle(plate, (VehicleType)type);
+                        make_shared<Vehicle>(
+                            plate,
+                            static_cast<VehicleType>(type)
+                        );
                     slot.vehicle->entryTime = entry;
-                    slot.isOccupied = true;
+                    slot.occupied = true;
+                    vehicleIndex[plate] = &slot;
                 }
             }
         }
+
+        if(file >> tag >> totalRevenue) {}
         file.close();
     }
 };
 
 int main() {
 
-    ParkingSystem system(2, 5); // 2 floors, 5 slots each
+    ParkingSystem system(3, 5); // 3 floors, 5 slots each
 
     int choice;
 
     while(true) {
-        cout << "\n===== SMART PARKING SYSTEM =====\n";
+        cout << "\n===== ELITE SMART PARKING SYSTEM =====\n";
         cout << "1. Show Status\n";
         cout << "2. Park Vehicle\n";
         cout << "3. Remove Vehicle\n";
