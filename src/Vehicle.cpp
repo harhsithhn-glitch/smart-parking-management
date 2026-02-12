@@ -1,4 +1,4 @@
-#include "../include/Vehicle.h"
+#include "Vehicle.h"
 
 Vehicle::Vehicle(std::string plate, VehicleType t)
     : plateNumber(plate), type(t) {}
