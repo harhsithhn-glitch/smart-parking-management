@@ -9,16 +9,14 @@
 class ParkingSystem {
 private:
     std::vector<ParkingSlot> slots;
-    std::unordered_map<std::string, ParkingSlot*> vehicleIndex;
+
+    // SAFE INDEXING (plate -> slot index)
+    std::unordered_map<std::string, int> vehicleIndex;
 
     double totalRevenue;
     const std::string adminPassword = "elite123";
 
     double getRate(VehicleType type);
-    void logEvent(const std::string& message);
-    void saveData();
-    void loadData();
-    void exportRevenueCSV(const std::string& plate, double fee);
 
 public:
     ParkingSystem(int floors, int slotsPerFloor);

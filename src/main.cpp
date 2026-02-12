@@ -1,15 +1,13 @@
-#include "../include/ParkingSystem.h"
 #include <iostream>
+#include "ParkingSystem.h"
 
 using namespace std;
 
 int main() {
-
-    ParkingSystem system(3, 5);
-
+    ParkingSystem system(2, 5);
     int choice;
 
-    while(true) {
+    while (true) {
         cout << "\n===== ELITE SMART PARKING SYSTEM =====\n";
         cout << "1. Show Status\n";
         cout << "2. Park Vehicle\n";
@@ -19,7 +17,7 @@ int main() {
         cout << "Enter choice: ";
         cin >> choice;
 
-        switch(choice) {
+        switch (choice) {
             case 1: system.showStatus(); break;
             case 2: system.parkVehicle(); break;
             case 3: system.removeVehicle(); break;
@@ -28,6 +26,4 @@ int main() {
             default: cout << "Invalid choice!\n";
         }
     }
-
-    return 0;
 }

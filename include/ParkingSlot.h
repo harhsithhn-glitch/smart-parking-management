@@ -14,13 +14,12 @@ public:
     ParkingSlot(int f, int s);
 
     bool isAvailable() const;
-    int getFloor() const;
-    int getSlotNumber() const;
-
     void parkVehicle(const Vehicle& v);
     void removeVehicle();
 
-    const Vehicle& getVehicle() const;
+    int getFloor() const;
+    int getSlotNumber() const;
+    Vehicle getVehicle() const;
 };
 
 #endif

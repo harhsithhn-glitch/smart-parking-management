@@ -1,193 +1,112 @@
 #include <iostream>
-#include <fstream>
-#include <iomanip>
-#include <ctime>
-#include "../include/ParkingSystem.h"
-#include "../include/Vehicle.h"
+#include "ParkingSystem.h"
 
 using namespace std;
 
 ParkingSystem::ParkingSystem(int floors, int slotsPerFloor)
     : totalRevenue(0.0) {
 
-    for (int f = 1; f <= floors; ++f) {
-        for (int s = 1; s <= slotsPerFloor; ++s) {
+    for (int f = 1; f <= floors; f++) {
+        for (int s = 1; s <= slotsPerFloor; s++) {
             slots.emplace_back(f, s);
         }
     }
-
-    loadData();
 }
 
 double ParkingSystem::getRate(VehicleType type) {
-    switch(type) {
-        case VehicleType::CAR: return 20.0;
-        case VehicleType::BIKE: return 10.0;
-        case VehicleType::TRUCK: return 30.0;
-        default: return 15.0;
+    switch (type) {
+        case VehicleType::CAR: return 50;
+        case VehicleType::BIKE: return 20;
+        case VehicleType::TRUCK: return 100;
+        default: return 0;
     }
-}
-
-void ParkingSystem::logEvent(const string& message) {
-    ofstream file("data/log.txt", ios::app);
-    time_t now = time(0);
-    file << ctime(&now) << " : " << message << "\n";
-    file.close();
-}
-
-void ParkingSystem::saveData() {
-    ofstream file("data/parking_data.txt");
-
-    file << totalRevenue << "\n";
-
-    for (const auto& slot : slots) {
-        if (!slot.isAvailable()) {
-            file << slot.getFloor() << " "
-                 << slot.getSlotNumber() << " "
-                 << slot.getVehicle().getPlateNumber() << " "
-                 << static_cast<int>(slot.getVehicle().getType()) << "\n";
-        }
-    }
-
-    file.close();
-}
-
-void ParkingSystem::loadData() {
-    ifstream file("data/parking_data.txt");
-    if (!file.is_open()) return;
-
-    file >> totalRevenue;
-
-    int floor, slotNumber, typeInt;
-    string plate;
-
-    while (file >> floor >> slotNumber >> plate >> typeInt) {
-        for (auto& slot : slots) {
-            if (slot.getFloor() == floor &&
-                slot.getSlotNumber() == slotNumber) {
-
-                Vehicle vehicle(plate, static_cast<VehicleType>(typeInt));
-                slot.parkVehicle(vehicle);
-                vehicleIndex[plate] = &slot;
-                break;
-            }
-        }
-    }
-
-    file.close();
-}
-
-void ParkingSystem::exportRevenueCSV(const string& plate, double fee) {
-    ofstream file("data/revenue.csv", ios::app);
-    file << plate << "," << fixed << setprecision(2) << fee << "\n";
-    file.close();
 }
 
 void ParkingSystem::showStatus() {
-    cout << "\n===== PARKING STATUS =====\n";
-
     for (const auto& slot : slots) {
         cout << "Floor " << slot.getFloor()
-             << " Slot " << slot.getSlotNumber()
-             << " : ";
+             << " Slot " << slot.getSlotNumber() << " : ";
 
-        if (slot.isAvailable())
+        if (slot.isAvailable()) {
             cout << "Available\n";
-        else
-            cout << "Occupied (" << slot.getVehicle().getPlateNumber() << ")\n";
+        } else {
+            cout << "Occupied ("
+                 << slot.getVehicle().getPlateNumber()
+                 << ")\n";
+        }
     }
-
-    cout << "Total Revenue: " << totalRevenue << "\n";
 }
 
 void ParkingSystem::parkVehicle() {
     string plate;
-    int typeInput;
+    int typeChoice;
 
-    cout << "Enter plate number: ";
+    cout << "Enter Plate Number: ";
     cin >> plate;
 
-    if (vehicleIndex.count(plate)) {
-        cout << "Vehicle already parked.\n";
+    if (vehicleIndex.find(plate) != vehicleIndex.end()) {
+        cout << "Vehicle already parked!\n";
         return;
     }
 
-    cout << "Select type (1-Car, 2-Bike, 3-Truck): ";
-    cin >> typeInput;
+    cout << "Vehicle Type (0=Car,1=Bike,2=Truck): ";
+    cin >> typeChoice;
 
-    VehicleType type = static_cast<VehicleType>(typeInput - 1);
+    VehicleType type = static_cast<VehicleType>(typeChoice);
     Vehicle vehicle(plate, type);
 
-    for (auto& slot : slots) {
-        if (slot.isAvailable()) {
-            slot.parkVehicle(vehicle);
-            vehicleIndex[plate] = &slot;
+    for (int i = 0; i < slots.size(); i++) {
+        if (slots[i].isAvailable()) {
+            slots[i].parkVehicle(vehicle);
 
-            logEvent("Vehicle parked: " + plate);
-            saveData();
+            // SAFE STORAGE (Step 1 & 2)
+            vehicleIndex[plate] = i;
 
-            cout << "Vehicle parked successfully.\n";
+            cout << "Parked at Floor "
+                 << slots[i].getFloor()
+                 << " Slot "
+                 << slots[i].getSlotNumber()
+                 << endl;
+
             return;
         }
     }
 
-    cout << "Parking Full.\n";
+    cout << "Parking Full!\n";
 }
 
 void ParkingSystem::removeVehicle() {
     string plate;
 
-    cout << "Enter plate number: ";
+    cout << "Enter Plate Number: ";
     cin >> plate;
 
-    if (!vehicleIndex.count(plate)) {
-        cout << "Vehicle not found.\n";
+    if (vehicleIndex.find(plate) == vehicleIndex.end()) {
+        cout << "Vehicle not found!\n";
         return;
     }
 
-    ParkingSlot* slot = vehicleIndex[plate];
+    int index = vehicleIndex[plate];
+    ParkingSlot& slot = slots[index];
 
-    double fee = getRate(slot->getVehicle().getType());
-
+    double fee = getRate(slot.getVehicle().getType());
     totalRevenue += fee;
 
-    exportRevenueCSV(plate, fee);
-
-    slot->removeVehicle();
+    slot.removeVehicle();
     vehicleIndex.erase(plate);
 
-    logEvent("Vehicle removed: " + plate);
-    saveData();
-
-    cout << "Vehicle removed.\n";
-    cout << "Parking Fee: " << fee << "\n";
+    cout << "Vehicle removed. Fee: " << fee << endl;
 }
 
 void ParkingSystem::adminPanel() {
-    string password;
-
+    string pass;
     cout << "Enter Admin Password: ";
-    cin >> password;
+    cin >> pass;
 
-    if (password != adminPassword) {
-        cout << "Access Denied.\n";
+    if (pass != adminPassword) {
+        cout << "Access Denied!\n";
         return;
     }
 
-    int choice;
-
-    cout << "\n--- ADMIN PANEL ---\n";
-    cout << "1. View Revenue\n";
-    cout << "2. Reset Revenue\n";
-    cout << "Enter choice: ";
-    cin >> choice;
-
-    if (choice == 1) {
-        cout << "Total Revenue: " << totalRevenue << "\n";
-    }
-    else if (choice == 2) {
-        totalRevenue = 0;
-        saveData();
-        cout << "Revenue reset.\n";
-    }
+    cout << "Total Revenue: " << totalRevenue << endl;
 }
