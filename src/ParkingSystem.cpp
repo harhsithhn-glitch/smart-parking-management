@@ -18,3 +18,20 @@ ParkingSystem::ParkingSystem(int floors, int slotsPerFloor)
 
     loadData();
 }
+// Rate calculation
+double ParkingSystem::getRate(VehicleType type) {
+    switch(type) {
+        case VehicleType::BIKE:  return 15;
+        case VehicleType::CAR:   return 30;
+        case VehicleType::TRUCK: return 60;
+    }
+    return 0;
+}
+
+// Logging system
+void ParkingSystem::logEvent(const string& message) {
+    ofstream log("data/system_log.txt", ios::app);
+    time_t now = time(nullptr);
+    log << ctime(&now) << " - " << message << "\n";
+    log.close();
+}
