@@ -4,9 +4,9 @@
 #include <string>
 
 enum class VehicleType {
-    CAR = 1,
-    BIKE = 2,
-    TRUCK = 3
+    CAR = 0,
+    BIKE = 1,
+    TRUCK = 2
 };
 
 class Vehicle {
@@ -15,7 +15,7 @@ private:
     VehicleType type;
 
 public:
-    Vehicle(std::string plate = "", VehicleType t = VehicleType::CAR);
+    Vehicle(std::string plate, VehicleType t);
 
     std::string getPlateNumber() const;
     VehicleType getType() const;
