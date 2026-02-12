@@ -13,7 +13,8 @@ int main() {
         cout << "2. Park Vehicle\n";
         cout << "3. Remove Vehicle\n";
         cout << "4. Admin Panel\n";
-        cout << "5. Exit\n";
+        cout << "5. Search Vehicle\n";
+        cout << "6. Exit\n";
         cout << "Enter choice: ";
         cin >> choice;
 
@@ -22,7 +23,8 @@ int main() {
             case 2: system.parkVehicle(); break;
             case 3: system.removeVehicle(); break;
             case 4: system.adminPanel(); break;
-            case 5: return 0;
+            case 5: system.searchVehicle(); break;
+            case 6: return 0;
             default: cout << "Invalid choice!\n";
         }
     }

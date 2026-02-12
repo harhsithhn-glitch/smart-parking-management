@@ -110,3 +110,23 @@ void ParkingSystem::adminPanel() {
 
     cout << "Total Revenue: " << totalRevenue << endl;
 }
+void ParkingSystem::searchVehicle() {
+    std::string plate;
+    std::cout << "Enter plate number to search: ";
+    std::cin >> plate;
+
+    auto it = vehicleIndex.find(plate);
+
+    if (it == vehicleIndex.end()) {
+        std::cout << "Vehicle not found.\n";
+        return;
+    }
+
+    int index = it->second;
+    ParkingSlot& slot = slots[index];
+
+    std::cout << "Vehicle Found!\n";
+    std::cout << "Floor: " << slot.getFloor() << "\n";
+    std::cout << "Slot: " << slot.getSlotNumber() << "\n";
+    std::cout << "Plate: " << slot.getVehicle().getPlateNumber() << "\n";
+}
