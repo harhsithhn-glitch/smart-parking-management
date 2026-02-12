@@ -1,8 +1,12 @@
 #include "../include/Vehicle.h"
 
-Vehicle::Vehicle(const std::string& plateNumber, VehicleType vehicleType)
-    : plate(plateNumber),
-      type(vehicleType),
-      entryTime(std::time(nullptr))
-{
+Vehicle::Vehicle(std::string plate, VehicleType t)
+    : plateNumber(plate), type(t) {}
+
+std::string Vehicle::getPlateNumber() const {
+    return plateNumber;
+}
+
+VehicleType Vehicle::getType() const {
+    return type;
 }
