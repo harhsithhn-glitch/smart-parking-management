@@ -25,6 +25,7 @@ public:
     void parkVehicle();
     void removeVehicle();
     void adminPanel();
+    void searchVehicle();
 };
 
 #endif
