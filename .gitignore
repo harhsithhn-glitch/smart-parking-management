@@ -1,2 +1,5 @@
 *.exe
 parking_report.txt
+data/
+*.exe
+*.txt
