@@ -9,23 +9,31 @@
 class ParkingSystem {
 private:
     std::vector<ParkingSlot> slots;
-
-    // SAFE INDEXING (plate -> slot index)
-    std::unordered_map<std::string, int> vehicleIndex;
+    std::unordered_map<std::string, size_t> vehicleIndex;
 
     double totalRevenue;
-    const std::string adminPassword = "elite123";
 
-    double getRate(VehicleType type);
+    static constexpr double BIKE_RATE = 20.0;
+    static constexpr double CAR_RATE = 50.0;
+    static constexpr double TRUCK_RATE = 100.0;
+
+    static constexpr int MAX_PLATE_LENGTH = 15;
+
+    double getRate(VehicleType type) const;
+    bool isValidPlate(const std::string& plate) const;
+    bool isValidVehicleType(int type) const;
+    void logEvent(const std::string& message) const;
+    void saveData() const;
+    void loadData();
 
 public:
     ParkingSystem(int floors, int slotsPerFloor);
 
-    void showStatus();
+    void showStatus() const;
     void parkVehicle();
     void removeVehicle();
-    void adminPanel();
-    void searchVehicle();
+    void searchVehicle() const;
+    void adminPanel() const;
 };
 
 #endif
